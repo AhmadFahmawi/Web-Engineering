@@ -1,0 +1,100 @@
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+// author Ahmad Fahmawi
+
+public class pingC{
+
+    public static void pingTask(String hostName, int PacketsNumber) throws IOException, UnknownHostException {
+        class _Time {
+
+            // encapsulate the time variables to organize the code
+            long serveTime;
+            long totalTime;
+            long maximumTime;
+            long minimumTime;
+            long averageTime;
+        }
+
+        InetAddress inetAddress = InetAddress.getByName(hostName);
+
+        //check on the number of packet the client_code need to test the connection
+        if (PacketsNumber <= 0) {
+            PacketsNumber = 4;
+        }
+
+        // variables needs
+        int PacketsLost = 0;
+        _Time time = new _Time();
+
+        //Pinging started
+        System.out.println(String.format("Pinging %s [%s] with 32 bytes of data:",
+                inetAddress.getHostName(), inetAddress.getHostAddress())
+        );
+
+        // set the initial value to the minumum serving time
+        time.minimumTime = System.currentTimeMillis();
+        for (int i = 0; i < PacketsNumber; i++) {
+            time.serveTime = System.currentTimeMillis();
+            if (inetAddress.isReachable(1000)) {
+                time.serveTime = System.currentTimeMillis() - time.serveTime;
+                System.out.println(
+                        String.format("Reply from %s bytes = 32 time = %s TTL = %s",
+                                inetAddress.getHostAddress(),
+                                time.serveTime,
+                                null//I don't understand what the "TTL" does, so that i assigned null as temporary value to it's variable
+                        )
+                );
+                time.totalTime += time.serveTime;
+                time.maximumTime = Math.max(time.serveTime, time.maximumTime);
+                time.minimumTime = Math.min(time.serveTime, time.minimumTime);
+            } else {
+                System.out.println("Request timed out.");
+                PacketsLost++;
+            }
+
+        }
+
+        //compute the number of receiving packets
+        int PacketsReceived = PacketsNumber - (int) PacketsLost;
+
+        //simple string formatting to simulate the output and organize it
+        System.out.print(String.format(
+                "\nPing statistics for %s :"
+                + "\n    Packets: Sent = %s, Received = %s, Lost = %s ",
+                inetAddress.getHostAddress(),
+                PacketsNumber, PacketsReceived, PacketsLost
+        )
+        );
+        //compute the lost messages, and concatenate it with the last output line.
+        int lostPercent = (int) (((float) PacketsLost / PacketsNumber) * 100);
+        System.out.println("(" + lostPercent + "% Lost)");
+
+        if (PacketsReceived > 0) {
+            //compute the average serving time
+            time.averageTime = time.totalTime / PacketsReceived;
+
+            //simple string formatting to simulate the output and organize it
+            System.out.println(String.format(
+                    "Approximate round trip times in milli-seconds:"
+                    + "\n    Maximum = %sms, Minimum = %sms, Average = %sms",
+                    time.maximumTime, time.minimumTime, time.averageTime
+            )
+            );
+        }
+
+    }
+
+    public static void main(String[] args) throws IOException {
+        try {
+            if (args.length == 1) {
+                pingTask(args[0], 4);
+            } else if (args.length == 2) {
+                pingTask(args[0], Integer.parseInt(args[1]));
+            }
+        } catch (UnknownHostException e) {
+            System.out.println("ERROR: Unknown Host, try again..");
+        }
+
+    }
+}
